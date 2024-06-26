@@ -117,8 +117,6 @@ export const AbiStoreLive = Layer.effect(
 
           const item = items[0]
 
-          console.log("item", item)
-
           if (item != null && item.status === "success") {
             return {
               status: "success",
