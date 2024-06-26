@@ -1,5 +1,5 @@
 ---
-version: '3'
+version: "3"
 services:
   jaeger:
     image: jaegertracing/all-in-one:1.45

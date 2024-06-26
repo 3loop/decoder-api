@@ -1,6 +1,10 @@
-import { DecodedTx } from '@3loop/transaction-decoder'
-import { QuickjsConfig, QuickjsInterpreterLive, TransactionInterpreter } from '@3loop/transaction-interpreter'
-import { Effect, Layer } from 'effect'
+import { DecodedTx } from "@3loop/transaction-decoder"
+import {
+  QuickjsConfig,
+  QuickjsInterpreterLive,
+  TransactionInterpreter,
+} from "@3loop/transaction-interpreter"
+import { Effect, Layer } from "effect"
 
 const config = Layer.succeed(QuickjsConfig, {
   runtimeConfig: { timeout: 1000 },
@@ -16,7 +20,7 @@ export const interpretTransaction = (decodedTx: DecodedTx) =>
 
     if (interpreter == null) {
       // TODO: use a default interpreter
-      return Effect.fail('Interpreter not found')
+      return Effect.fail("Interpreter not found")
     }
 
     const result = yield* interpreterService.interpretTx(decodedTx, interpreter)

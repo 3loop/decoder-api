@@ -1,9 +1,9 @@
-import * as SqliteDrizzle from '@effect/sql-drizzle/Sqlite'
-import { SqliteClient } from '@effect/sql-sqlite-bun'
-import { Config, Layer } from 'effect'
+import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
+import { SqliteClient } from "@effect/sql-sqlite-bun"
+import { Config, Layer } from "effect"
 
 const SqlLive = SqliteClient.layer({
-  filename: Config.succeed('db.sqlite'),
+  filename: Config.succeed("db.sqlite"),
 })
 
 const DrizzleLive = SqliteDrizzle.layer.pipe(Layer.provide(SqlLive))

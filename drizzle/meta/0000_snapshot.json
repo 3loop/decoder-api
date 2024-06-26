@@ -1,14 +1,43 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "cbdf3aae-0742-492d-8718-025659e43b49",
+  "id": "cf643129-cd5d-4f63-8f40-b65c73e2c22a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "contractAbi": {
       "name": "contractAbi",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(current_timestamp)"
+        },
         "address": {
           "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "event": {
+          "name": "event",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -27,37 +56,16 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "contractAbi_address_chain_pk": {
-          "columns": ["address", "chain"],
-          "name": "contractAbi_address_chain_pk"
-        }
-      },
-      "uniqueConstraints": {}
-    },
-    "contractFragments": {
-      "name": "contractFragments",
-      "columns": {
-        "signature": {
-          "name": "signature",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fragment": {
-          "name": "fragment",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
         "type": {
           "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -109,6 +117,13 @@
         },
         "type": {
           "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

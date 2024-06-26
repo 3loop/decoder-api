@@ -1,28 +1,34 @@
-import { decodeTransactionByHash } from '@3loop/transaction-decoder'
-import { HttpMiddleware, HttpRouter, HttpServer, HttpServerRequest, HttpServerResponse } from '@effect/platform'
-import { Schema } from '@effect/schema'
-import { SqliteDrizzle } from '@effect/sql-drizzle/Sqlite'
-import { Effect, Either } from 'effect'
-import { Hex } from 'viem'
-import { contractAbiTable, contractMetaTable } from './db/schema'
-import { interpretTransaction } from './interpreter'
+import { decodeTransactionByHash } from "@3loop/transaction-decoder"
+import {
+  HttpMiddleware,
+  HttpRouter,
+  HttpServer,
+  HttpServerRequest,
+  HttpServerResponse,
+} from "@effect/platform"
+import { Schema } from "@effect/schema"
+import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite"
+import { Effect, Either } from "effect"
+import { Hex } from "viem"
+import { contractAbiTable, contractMetaTable } from "./db/schema"
+import { interpretTransaction } from "./interpreter"
 
 const GetRoute = HttpRouter.get(
-  '/',
+  "/",
   Effect.gen(function* () {
-    return yield* HttpServerResponse.text('ok')
+    return yield* HttpServerResponse.text("ok")
   }),
 )
 
 const DecodeRoute = HttpRouter.get(
-  '/decode/:chain/:hash',
+  "/decode/:chain/:hash",
   Effect.gen(function* () {
     const params = yield* HttpRouter.params
 
     if (isNaN(Number(params.chain)) || params.hash == null) {
       return yield* HttpServerResponse.json(
         {
-          error: 'Missing required parameters',
+          error: "Missing required parameters",
         },
         {
           status: 400,
@@ -30,13 +36,15 @@ const DecodeRoute = HttpRouter.get(
       )
     }
 
-    const decoded = yield* Effect.either(decodeTransactionByHash(params.hash as Hex, Number(params.chain)))
+    const decoded = yield* Effect.either(
+      decodeTransactionByHash(params.hash as Hex, Number(params.chain)),
+    )
 
     if (Either.isLeft(decoded)) {
-      yield* Effect.logError('Decode failed', decoded.left)
+      yield* Effect.logError("Decode failed", decoded.left)
       return yield* HttpServerResponse.json(
         {
-          error: 'Failed to decode transaction',
+          error: "Failed to decode transaction",
         },
         {
           status: 400,
@@ -49,14 +57,14 @@ const DecodeRoute = HttpRouter.get(
 )
 
 const InterpretRoute = HttpRouter.get(
-  '/interpret/:chain/:hash',
+  "/interpret/:chain/:hash",
   Effect.gen(function* () {
     const params = yield* HttpRouter.params
 
     if (isNaN(Number(params.chain)) || params.hash == null) {
       return yield* HttpServerResponse.json(
         {
-          error: 'Missing required parameters',
+          error: "Missing required parameters",
         },
         {
           status: 400,
@@ -64,13 +72,15 @@ const InterpretRoute = HttpRouter.get(
       )
     }
 
-    const decoded = yield* Effect.either(decodeTransactionByHash(params.hash as Hex, Number(params.chain)))
+    const decoded = yield* Effect.either(
+      decodeTransactionByHash(params.hash as Hex, Number(params.chain)),
+    )
 
     if (Either.isLeft(decoded)) {
-      yield* Effect.logError('Decode failed', decoded.left)
+      yield* Effect.logError("Decode failed", decoded.left)
       return yield* HttpServerResponse.json(
         {
-          error: 'Failed to decode transaction',
+          error: "Failed to decode transaction",
         },
         {
           status: 400,
@@ -84,7 +94,7 @@ const InterpretRoute = HttpRouter.get(
 )
 
 const AddMetadata = HttpRouter.post(
-  '/add-metadata',
+  "/add-metadata",
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle
 
@@ -108,12 +118,12 @@ const AddMetadata = HttpRouter.post(
       chain: data.chainID,
     })
 
-    return yield* HttpServerResponse.json({ status: 'ok' })
+    return yield* HttpServerResponse.json({ status: "ok" })
   }),
 )
 
 const AddAbi = HttpRouter.post(
-  '/add-abi',
+  "/add-abi",
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle
 
@@ -129,7 +139,7 @@ const AddAbi = HttpRouter.post(
       abi: data.abi,
     })
 
-    return yield* HttpServerResponse.json({ status: 'ok' })
+    return yield* HttpServerResponse.json({ status: "ok" })
   }),
 )
 
@@ -139,7 +149,7 @@ export const HttpLive = HttpRouter.empty.pipe(
   InterpretRoute,
   AddMetadata,
   AddAbi,
-  HttpRouter.get('/ping', Effect.succeed(HttpServerResponse.text('pong'))),
+  HttpRouter.get("/ping", Effect.succeed(HttpServerResponse.text("pong"))),
   HttpServer.serve(HttpMiddleware.logger),
   HttpServer.withLogAddress,
 )

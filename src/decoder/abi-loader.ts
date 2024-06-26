@@ -1,9 +1,16 @@
-import { contractAbiTable, contractFragmentsTable } from '@/db/schema'
-import { AbiStore, EtherscanStrategyResolver, FourByteStrategyResolver } from '@3loop/transaction-decoder'
-import * as SqliteDrizzle from '@effect/sql-drizzle/Sqlite'
-import { eq } from 'drizzle-orm'
-import { Effect, Layer } from 'effect'
-import { LOCAL_FRAGMENTS } from './abis'
+import { contractAbiTable } from "@/db/schema"
+import {
+  AbiStore,
+  ContractAbiResult,
+  EtherscanStrategyResolver,
+  FourByteStrategyResolver,
+  OpenchainStrategyResolver,
+  SourcifyStrategyResolver,
+} from "@3loop/transaction-decoder"
+import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
+import { eq, and, or } from "drizzle-orm"
+import { Effect, Layer } from "effect"
+import { LOCAL_FRAGMENTS } from "./abis"
 
 export const AbiStoreLive = Layer.effect(
   AbiStore,
@@ -13,86 +20,128 @@ export const AbiStoreLive = Layer.effect(
     return AbiStore.of({
       strategies: {
         default: [
-          // EtherscanStrategyResolver({}),
-          // SourcifyStrategyResolver(),
-          // OpenchainStrategyResolver(),
-          // FourByteStrategyResolver(),
+          EtherscanStrategyResolver({
+            apikey: process.env.ETHERSCAN_API_KEY,
+          }),
+          SourcifyStrategyResolver(),
+          OpenchainStrategyResolver(),
+          FourByteStrategyResolver(),
         ],
       },
-      set: ({ address, func = {}, event = {} }) =>
+      set: (key, value) =>
         Effect.gen(function* (_) {
-          if (address != null) {
-            const abis = Object.entries(address)
-
+          if (value.status === "success") {
+            const result = value.result
             yield* db
               .insert(contractAbiTable)
-              .values(
-                abis.map(([address, abi]) => ({
-                  address,
-                  abi,
-                })),
-              )
+              .values({
+                type: result.type,
+                address: result.address,
+                event: "event" in result ? result.event : null,
+                signature: "signature" in result ? result.signature : null,
+                chain: result.chainID,
+                abi: result.abi,
+                status: "success",
+              })
               .pipe(Effect.catchAll(() => Effect.succeed(null)))
-          }
-
-          const signature = {
-            ...func,
-            ...event,
-          }
-
-          if (signature != null) {
-            const fragments = Object.entries(signature)
-
-            const entities = fragments.map(([signature, fragment]) => ({
-              signature: signature,
-              fragment: fragment,
-              type: func[signature] ? 'function' : 'event',
-            }))
-
+          } else {
             yield* db
-              .insert(contractFragmentsTable)
-              .values(entities)
+              .insert(contractAbiTable)
+              .values({
+                type: "address",
+                address: key.address,
+                chain: key.chainID,
+                status: "not-found",
+              })
               .pipe(Effect.catchAll(() => Effect.succeed(null)))
           }
         }),
 
-      get: ({ address, signature, event }) =>
+      get: ({ address, signature, event, chainID }) =>
         Effect.gen(function* (_) {
-          const sig = signature ?? event
-          if (sig == null) return null
-
-          // NOTE: For common contracts we store the fragment locally for fast access
-          const match = LOCAL_FRAGMENTS[sig]
-          if (match != null) {
-            return `[${match.fragment}]`
+          // NOTE: For common contracts such as ERC20 we store the fragment locally for fast access
+          const match = signature ? LOCAL_FRAGMENTS[signature] : null
+          if (signature != null && match != null) {
+            return {
+              status: "success",
+              result: {
+                type: "func",
+                address,
+                signature: signature,
+                chainID: chainID,
+                abi: `[${match.fragment}]`,
+              },
+            }
+          }
+          const eventMatch = event ? LOCAL_FRAGMENTS[event] : null
+          if (event != null && eventMatch != null) {
+            return {
+              status: "success",
+              result: {
+                type: "event",
+                address: address,
+                event: event,
+                chainID: chainID,
+                abi: `[${eventMatch.fragment}]`,
+              },
+            }
           }
 
-          // For non local abis we need to fetch from dynamodb
+          // For non local abis we need to fetch from database
           const items = yield* db
             .select()
             .from(contractAbiTable)
-            .where(eq(contractAbiTable.address, address))
+            .where(
+              or(
+                and(
+                  eq(contractAbiTable.address, address),
+                  eq(contractAbiTable.chain, chainID),
+                  eq(contractAbiTable.type, "address"),
+                ),
+                ...[
+                  signature != null &&
+                  and(
+                    eq(contractAbiTable.signature, signature),
+                    eq(contractAbiTable.type, "func"),
+                  ),
+                  event != null &&
+                  and(
+                    eq(contractAbiTable.event, event),
+                    eq(contractAbiTable.type, "event"),
+                  ),
+                ].filter(Boolean),
+              ),
+            )
+            .limit(1)
             .pipe(Effect.catchAll(() => Effect.succeed([])))
 
           const item = items[0]
 
-          if (item != null) {
-            return item?.abi
+          console.log("item", item)
+
+          if (item != null && item.status === "success") {
+            return {
+              status: "success",
+              result: {
+                type: item.type,
+                address: item.address,
+                event: item.event,
+                signature: item.signature,
+                chainID: item.chain,
+                abi: item.abi,
+              },
+            } as ContractAbiResult
+          } else if (item != null && item.status === "not-found") {
+            return {
+              status: "not-found",
+              result: null,
+            }
           }
 
-          const fragments = yield* db
-            .select()
-            .from(contractFragmentsTable)
-            .where(eq(contractFragmentsTable.signature, sig))
-            .pipe(Effect.catchAll(() => Effect.succeed([])))
-
-          const fragment = fragments[0]
-
-          if (fragment != null) {
-            return `[${fragment.fragment}]`
+          return {
+            status: "empty",
+            result: null,
           }
-
-          return null
         }),
     })
   }),

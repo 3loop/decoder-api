@@ -1,13 +1,13 @@
-import type { PublicClientObject } from '@3loop/transaction-decoder'
-import { PublicClient, UnknownNetwork } from '@3loop/transaction-decoder'
-import { Effect, Layer } from 'effect'
-import { createPublicClient, http } from 'viem'
+import type { PublicClientObject } from "@3loop/transaction-decoder"
+import { PublicClient, UnknownNetwork } from "@3loop/transaction-decoder"
+import { Effect, Layer } from "effect"
+import { createPublicClient, http } from "viem"
 
 const providerConfigs: Record<number, any> = {
   1: {
-    rpcUrl: 'https://rpc.ankr.com/eth',
+    rpcUrl: process.env.ETH_RPC_URL,
   },
-  11155111: { rpcUrl: 'https://rpc.ankr.com/eth_sepolia' },
+  11155111: { rpcUrl: process.env.SEPOLIA_RPC_URL },
 }
 
 const providers: Record<number, PublicClientObject> = {}
@@ -41,7 +41,7 @@ export function getProvider(chainID: number): PublicClientObject | null {
 export const RPCProviderLive = Layer.succeed(
   PublicClient,
   PublicClient.of({
-    _tag: 'PublicClient',
+    _tag: "PublicClient",
     getPublicClient: (chainID: number) => {
       const provider = getProvider(chainID)
       if (provider != null) {

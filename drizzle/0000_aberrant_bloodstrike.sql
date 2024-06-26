@@ -1,14 +1,13 @@
 CREATE TABLE `contractAbi` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`timestamp` text DEFAULT (current_timestamp) NOT NULL,
 	`address` text,
+	`signature` text,
+	`event` text,
 	`chain` integer,
 	`abi` text,
-	PRIMARY KEY(`address`, `chain`)
-);
---> statement-breakpoint
-CREATE TABLE `contractFragments` (
-	`signature` text,
-	`fragment` text,
-	`type` text
+	`type` text,
+	`status` text
 );
 --> statement-breakpoint
 CREATE TABLE `contractMeta` (
@@ -18,5 +17,6 @@ CREATE TABLE `contractMeta` (
 	`tokenSymbol` text,
 	`decimals` integer,
 	`type` text,
+	`status` text,
 	PRIMARY KEY(`address`, `chain`)
 );
