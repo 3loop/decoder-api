@@ -9,19 +9,20 @@ import {
 } from "@3loop/transaction-decoder"
 import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
 import { eq, and, or } from "drizzle-orm"
-import { Effect, Layer } from "effect"
+import { Config, Effect, Layer } from "effect"
 import { LOCAL_FRAGMENTS } from "./abis"
 
 export const AbiStoreLive = Layer.effect(
   AbiStore,
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle.SqliteDrizzle
+    const etherscanApiKey = yield* Config.string("ETHERSCAN_API_KEY")
 
     return AbiStore.of({
       strategies: {
         default: [
           EtherscanStrategyResolver({
-            apikey: process.env.ETHERSCAN_API_KEY,
+            apikey: etherscanApiKey,
           }),
           SourcifyStrategyResolver(),
           OpenchainStrategyResolver(),
