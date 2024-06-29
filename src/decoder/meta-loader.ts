@@ -6,6 +6,7 @@ import {
   NFTRPCStrategyResolver,
   PublicClient,
 } from "@3loop/transaction-decoder"
+import { SqlClient } from "@effect/sql"
 import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
 import { and, eq } from "drizzle-orm"
 import { Effect, Layer } from "effect"
@@ -14,6 +15,7 @@ export const ContractMetaStoreLive = Layer.effect(
   ContractMetaStore,
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle.SqliteDrizzle
+    const sql = yield* SqlClient.SqlClient
 
     const publicClient = yield* PublicClient
     const erc20Loader = ERC20RPCStrategyResolver(publicClient)
@@ -24,35 +26,17 @@ export const ContractMetaStoreLive = Layer.effect(
       set: (key, value) =>
         Effect.gen(function* () {
           if (value.status === "success") {
-            yield* db
-              .insert(contractMetaTable)
-              .values({
-                address: key.address,
-                chain: key.chainID,
-                contractName: value.result.contractName,
-                tokenSymbol: value.result.tokenSymbol,
-                decimals: value.result.decimals,
-                type: value.result.type,
-                status: "success",
-              })
-              .pipe(Effect.catchAll(() => Effect.succeed(null)))
+            yield* sql`
+              INSERT INTO contractMeta (address, chain, contractName, tokenSymbol, decimals, type, status)
+              VALUES (${key.address}, ${key.chainID}, ${value.result.contractName}, ${value.result.tokenSymbol}, ${value.result.decimals ?? null}, ${value.result.type}, "success")
+            `
           } else {
-            yield* db
-              .insert(contractMetaTable)
-              .values([
-                {
-                  address: key.address,
-                  chain: key.chainID,
-                  contractName: null,
-                  tokenSymbol: null,
-                  decimals: null,
-                  type: null,
-                  status: "not-found",
-                },
-              ])
-              .pipe(Effect.catchAll(() => Effect.succeed(null)))
+            yield* sql`
+              INSERT INTO contractMeta (address, chain, contractName, tokenSymbol, decimals, type, status)
+              VALUES (${key.address}, ${key.chainID}, null, null, null, null, "not-found")
+            `
           }
-        }),
+        }).pipe(Effect.catchAll(() => Effect.succeed(null))),
       get: ({ address, chainID }) =>
         Effect.gen(function* () {
           const items = yield* db

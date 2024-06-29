@@ -11,12 +11,14 @@ import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
 import { eq, and, or } from "drizzle-orm"
 import { Config, Effect, Layer } from "effect"
 import { LOCAL_FRAGMENTS } from "./abis"
+import { SqlClient } from "@effect/sql"
 
 export const AbiStoreLive = Layer.effect(
   AbiStore,
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle.SqliteDrizzle
     const etherscanApiKey = yield* Config.string("ETHERSCAN_API_KEY")
+    const sql = yield* SqlClient.SqlClient
 
     return AbiStore.of({
       strategies: {
@@ -33,30 +35,17 @@ export const AbiStoreLive = Layer.effect(
         Effect.gen(function* (_) {
           if (value.status === "success") {
             const result = value.result
-            yield* db
-              .insert(contractAbiTable)
-              .values({
-                type: result.type,
-                address: result.address,
-                event: "event" in result ? result.event : null,
-                signature: "signature" in result ? result.signature : null,
-                chain: result.chainID,
-                abi: result.abi,
-                status: "success",
-              })
-              .pipe(Effect.catchAll(() => Effect.succeed(null)))
+            yield* sql`
+              INSERT INTO contractAbi (type, address, event, signature, chain, abi, status)
+              VALUES (${result.type}, ${result.address}, ${"event" in result ? result.event : null}, ${"signature" in result ? result.signature : null}, ${result.chainID}, ${result.abi}, "success")
+            `
           } else {
-            yield* db
-              .insert(contractAbiTable)
-              .values({
-                type: "address",
-                address: key.address,
-                chain: key.chainID,
-                status: "not-found",
-              })
-              .pipe(Effect.catchAll(() => Effect.succeed(null)))
+            yield* sql`
+              INSERT INTO contractAbi (type, address, chain, status)
+              VALUES ("address", ${key.address}, ${key.chainID}, "not-found")
+            `
           }
-        }),
+        }).pipe(Effect.catchAll(() => Effect.succeed(null))),
 
       get: ({ address, signature, event, chainID }) =>
         Effect.gen(function* (_) {
@@ -101,15 +90,15 @@ export const AbiStoreLive = Layer.effect(
                 ),
                 ...[
                   signature != null &&
-                  and(
-                    eq(contractAbiTable.signature, signature),
-                    eq(contractAbiTable.type, "func"),
-                  ),
+                    and(
+                      eq(contractAbiTable.signature, signature),
+                      eq(contractAbiTable.type, "func"),
+                    ),
                   event != null &&
-                  and(
-                    eq(contractAbiTable.event, event),
-                    eq(contractAbiTable.type, "event"),
-                  ),
+                    and(
+                      eq(contractAbiTable.event, event),
+                      eq(contractAbiTable.type, "event"),
+                    ),
                 ].filter(Boolean),
               ),
             )
