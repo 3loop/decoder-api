@@ -3,6 +3,7 @@ import {
   QuickjsConfig,
   QuickjsInterpreterLive,
   TransactionInterpreter,
+  fallbackInterpreter,
 } from "@3loop/transaction-interpreter"
 import { Effect, Layer } from "effect"
 
@@ -16,11 +17,10 @@ export const interpretTransaction = (decodedTx: DecodedTx) =>
   Effect.gen(function* () {
     const interpreterService = yield* TransactionInterpreter
 
-    const interpreter = interpreterService.findInterpreter(decodedTx)
+    let interpreter = interpreterService.findInterpreter(decodedTx)
 
     if (interpreter == null) {
-      // TODO: use a default interpreter
-      return Effect.fail("Interpreter not found")
+      interpreter = { id: 'fallback', schema: fallbackInterpreter }
     }
 
     const result = yield* interpreterService.interpretTx(decodedTx, interpreter)
