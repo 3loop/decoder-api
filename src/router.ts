@@ -12,6 +12,7 @@ import { Effect, Either } from "effect"
 import { Hex } from "viem"
 import { contractAbiTable, contractMetaTable } from "./db/schema"
 import { interpretTransaction } from "./interpreter"
+import { OpenApiRoute, SwaggerUIRoute } from "./swagger"
 
 const GetRoute = HttpRouter.get(
   "/",
@@ -93,6 +94,22 @@ const InterpretRoute = HttpRouter.get(
   }),
 )
 
+const SupportedChainsRoute = HttpRouter.get(
+  "/supported-chains",
+  Effect.gen(function* () {
+    return yield* HttpServerResponse.json({
+      chains: [
+        { chainId: 1, name: "Ethereum" },
+        {
+          chainId: 11155111,
+          name: "Ethereum Sepolia Testnet",
+        },
+      ],
+    })
+  }),
+)
+
+// TODO: add authorization
 const AddMetadata = HttpRouter.post(
   "/add-metadata",
   Effect.gen(function* () {
@@ -149,6 +166,9 @@ export const HttpLive = HttpRouter.empty.pipe(
   InterpretRoute,
   AddMetadata,
   AddAbi,
+  SwaggerUIRoute,
+  OpenApiRoute,
+  SupportedChainsRoute,
   HttpRouter.get("/ping", Effect.succeed(HttpServerResponse.text("pong"))),
   HttpServer.serve(HttpMiddleware.logger),
   HttpServer.withLogAddress,
