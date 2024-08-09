@@ -7,12 +7,11 @@ import {
   HttpServerResponse,
 } from "@effect/platform"
 import { Schema } from "@effect/schema"
-import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite"
 import { Effect, Either } from "effect"
 import { Hex } from "viem"
-import { contractAbiTable, contractMetaTable } from "./db/schema"
 import { interpretTransaction } from "./interpreter"
 import { OpenApiRoute, SwaggerUIRoute } from "./swagger"
+import { SqlClient } from "@effect/sql"
 
 const GetRoute = HttpRouter.get(
   "/",
@@ -74,7 +73,7 @@ const InterpretRoute = HttpRouter.get(
     }
 
     const decoded = yield* Effect.either(
-      decodeTransactionByHash(params.hash as Hex, Number(params.chain)),
+      decodeTransactionByHash(params.hash as Hex, Number(params.chain))
     )
 
     if (Either.isLeft(decoded)) {
@@ -113,7 +112,7 @@ const SupportedChainsRoute = HttpRouter.get(
 const AddMetadata = HttpRouter.post(
   "/add-metadata",
   Effect.gen(function* () {
-    const db = yield* SqliteDrizzle
+    const sql = yield* SqlClient.SqlClient
 
     const data = yield* HttpServerRequest.schemaBodyJson(
       Schema.Struct({
@@ -123,17 +122,14 @@ const AddMetadata = HttpRouter.post(
         decimals: Schema.optional(Schema.Number),
         type: Schema.String,
         chainID: Schema.Number,
+        status: Schema.Enums({ success: "success" }),
       }),
     )
 
-    yield* db.insert(contractMetaTable).values({
-      address: data.address,
-      contractName: data.contractName,
-      tokenSymbol: data.tokenSymbol,
-      decimals: data.decimals,
-      type: data.type,
-      chain: data.chainID,
-    })
+    yield* sql`
+      INSERT INTO contractMeta (address, chain, contractName, tokenSymbol, decimals, type, status)
+      VALUES (${data.address}, ${data.chainID}, ${data.contractName}, ${data.tokenSymbol}, ${data.decimals ?? null}, ${data.type}, "success")
+    `
 
     return yield* HttpServerResponse.json({ status: "ok" })
   }),
@@ -142,7 +138,7 @@ const AddMetadata = HttpRouter.post(
 const AddAbi = HttpRouter.post(
   "/add-abi",
   Effect.gen(function* () {
-    const db = yield* SqliteDrizzle
+    const sql = yield* SqlClient.SqlClient
 
     const data = yield* HttpServerRequest.schemaBodyJson(
       Schema.Struct({
@@ -151,10 +147,10 @@ const AddAbi = HttpRouter.post(
       }),
     )
 
-    yield* db.insert(contractAbiTable).values({
-      address: data.address,
-      abi: data.abi,
-    })
+    yield* sql`
+      INSERT INTO contractAbi (address, abi)
+      VALUES (${data.address}, ${data.abi})
+    `
 
     return yield* HttpServerResponse.json({ status: "ok" })
   }),
@@ -170,6 +166,10 @@ export const HttpLive = HttpRouter.empty.pipe(
   OpenApiRoute,
   SupportedChainsRoute,
   HttpRouter.get("/ping", Effect.succeed(HttpServerResponse.text("pong"))),
+  Effect.timeoutFail({
+    duration: "10 seconds",
+    onTimeout: () => HttpServerResponse.text("timeout"),
+  }),
   HttpServer.serve(HttpMiddleware.logger),
   HttpServer.withLogAddress,
 )
