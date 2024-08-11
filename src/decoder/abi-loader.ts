@@ -17,7 +17,7 @@ export const AbiStoreLive = Layer.effect(
   AbiStore,
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle.SqliteDrizzle
-    const etherscanApiKey = yield* Config.string("ETHERSCAN_API_KEY")
+    const etherscanApiKey = yield* Config.withDefault(Config.string("ETHERSCAN_API_KEY"), undefined)
     const sql = yield* SqlClient.SqlClient
 
     return AbiStore.of({

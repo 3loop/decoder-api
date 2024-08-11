@@ -73,7 +73,7 @@ const InterpretRoute = HttpRouter.get(
     }
 
     const decoded = yield* Effect.either(
-      decodeTransactionByHash(params.hash as Hex, Number(params.chain))
+      decodeTransactionByHash(params.hash as Hex, Number(params.chain)),
     )
 
     if (Either.isLeft(decoded)) {
@@ -156,6 +156,11 @@ const AddAbi = HttpRouter.post(
   }),
 )
 
+const HealthRoute = HttpRouter.get(
+  "/ping",
+  Effect.succeed(HttpServerResponse.text("pong")),
+)
+
 export const HttpLive = HttpRouter.empty.pipe(
   GetRoute,
   DecodeRoute,
@@ -165,11 +170,34 @@ export const HttpLive = HttpRouter.empty.pipe(
   SwaggerUIRoute,
   OpenApiRoute,
   SupportedChainsRoute,
-  HttpRouter.get("/ping", Effect.succeed(HttpServerResponse.text("pong"))),
+  HealthRoute,
   Effect.timeoutFail({
     duration: "10 seconds",
     onTimeout: () => HttpServerResponse.text("timeout"),
   }),
+  Effect.catchTag("RouteNotFound", () =>
+    Effect.gen(function* () {
+      return HttpServerResponse.text("Not Found", {
+        status: 404,
+      })
+    }),
+  ),
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError("Error", error)
+      return HttpServerResponse.text("Error", {
+        status: 500,
+      })
+    }),
+  ),
+  Effect.catchAllDefect((defect) =>
+    Effect.gen(function* () {
+      yield* Effect.logError("Defect", defect)
+      return HttpServerResponse.text("Defect", {
+        status: 500,
+      })
+    }),
+  ),
   HttpServer.serve(HttpMiddleware.logger),
   HttpServer.withLogAddress,
 )
