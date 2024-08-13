@@ -7,11 +7,12 @@ import {
   HttpServerResponse,
 } from "@effect/platform"
 import { Schema } from "@effect/schema"
-import { Effect, Either } from "effect"
+import { Effect, Either, Layer, Request } from "effect"
 import { Hex } from "viem"
 import { interpretTransaction } from "./interpreter"
 import { OpenApiRoute, SwaggerUIRoute } from "./swagger"
 import { SqlClient } from "@effect/sql"
+import { Authorization, authorizationMiddleware } from "./authorization"
 
 const GetRoute = HttpRouter.get(
   "/",
@@ -108,27 +109,28 @@ const SupportedChainsRoute = HttpRouter.get(
   }),
 )
 
-// TODO: add authorization
 const AddMetadata = HttpRouter.post(
   "/add-metadata",
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient
+    const auth = yield* Authorization
+
+    yield* auth.isAuthorized
 
     const data = yield* HttpServerRequest.schemaBodyJson(
       Schema.Struct({
         address: Schema.String,
         contractName: Schema.String,
-        tokenSymbol: Schema.String,
+        tokenSymbol: Schema.optional(Schema.String),
         decimals: Schema.optional(Schema.Number),
         type: Schema.String,
         chainID: Schema.Number,
-        status: Schema.Enums({ success: "success" }),
       }),
     )
 
     yield* sql`
       INSERT INTO contractMeta (address, chain, contractName, tokenSymbol, decimals, type, status)
-      VALUES (${data.address}, ${data.chainID}, ${data.contractName}, ${data.tokenSymbol}, ${data.decimals ?? null}, ${data.type}, "success")
+      VALUES (${data.address}, ${data.chainID}, ${data.contractName}, ${data.tokenSymbol ?? null}, ${data.decimals ?? null}, ${data.type}, "success")
     `
 
     return yield* HttpServerResponse.json({ status: "ok" })
@@ -139,6 +141,9 @@ const AddAbi = HttpRouter.post(
   "/add-abi",
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient
+    const auth = yield* Authorization
+
+    yield* auth.isAuthorized
 
     const data = yield* HttpServerRequest.schemaBodyJson(
       Schema.Struct({
@@ -147,6 +152,7 @@ const AddAbi = HttpRouter.post(
       }),
     )
 
+    // TODO: Validate ABI
     yield* sql`
       INSERT INTO contractAbi (address, abi)
       VALUES (${data.address}, ${data.abi})
@@ -171,10 +177,20 @@ export const HttpLive = HttpRouter.empty.pipe(
   OpenApiRoute,
   SupportedChainsRoute,
   HealthRoute,
+  HttpRouter.use(authorizationMiddleware),
   Effect.timeoutFail({
     duration: "10 seconds",
-    onTimeout: () => HttpServerResponse.text("timeout"),
+    onTimeout: () => HttpServerResponse.text("timeout", {
+      status: 408,
+    }),
   }),
+  Effect.catchTag("AuthorizationError", (error) =>
+    Effect.gen(function* () {
+      return HttpServerResponse.text(error.message, {
+        status: 401,
+      })
+    }),
+  ),
   Effect.catchTag("RouteNotFound", () =>
     Effect.gen(function* () {
       return HttpServerResponse.text("Not Found", {

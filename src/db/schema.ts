@@ -1,6 +1,16 @@
 import { sql } from "drizzle-orm"
 import * as D from "drizzle-orm/sqlite-core"
 
+export const apiKeys = D.sqliteTable("apiKeys", {
+  apiKey: D.text("apiKey").primaryKey(),
+  organisationId: D.text("organisationId").references(() => organisations.id)
+})
+
+export const organisations = D.sqliteTable("organisations", {
+  id: D.integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  name: D.text("name"),
+})
+
 export const contractAbiTable = D.sqliteTable("contractAbi", {
   id: D.integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
   updatedAt: D.text("timestamp")

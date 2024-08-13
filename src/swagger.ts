@@ -55,7 +55,44 @@ export const OpenApiRoute = HttpRouter.get(
         title,
         version: "1.0.0",
       },
+      components: {
+        securitySchemes: {
+          apiKeyAuth: {
+            type: "apiKey",
+            in: "header",
+            name: "x-api-key",
+          },
+        },
+      },
       paths: {
+        "/add-abi": {
+          post: {
+            summary: "Manully add a contract ABI to the database",
+            requestBody: {
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      address: {
+                        type: "string",
+                      },
+                      abi: {
+                        type: "string",
+                      },
+                    },
+                    required: ["address", "abi"],
+                  },
+                },
+              },
+            },
+            security: [
+              {
+                apiKeyAuth: [],
+              },
+            ],
+          },
+        },
         "/supported-chains": {
           get: {
             summary: "List supported chains",

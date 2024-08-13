@@ -1,7 +1,7 @@
 import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
 
 import * as Dotenv from "dotenv"
-import { Config, Effect, Layer, LogLevel, Logger } from "effect"
+import { Config, Effect, Layer, LogLevel, Logger, Request } from "effect"
 import { DatabaseLive } from "./db"
 import { AbiStoreLive } from "./decoder/abi-loader"
 import { ContractMetaStoreLive } from "./decoder/meta-loader"
@@ -35,4 +35,10 @@ const MainLive = Layer.provide(
   Layer.provide(TracingLive),
 )
 
-BunRuntime.runMain(Layer.launch(MainLive))
+const cache = Effect.provide(
+  Layer.setRequestCache(
+    Request.makeCache({ capacity: 256, timeToLive: "60 minutes" }),
+  ),
+)
+
+BunRuntime.runMain(Layer.launch(MainLive).pipe(cache))
