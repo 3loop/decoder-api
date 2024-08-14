@@ -93,7 +93,7 @@ export const AbiStoreLive = Layer.effect(
             .where(
               or(
                 and(
-                  eq(contractAbiTable.address, address),
+                  eq(contractAbiTable.address, address.toLowerCase()),
                   eq(contractAbiTable.chain, chainID),
                   eq(contractAbiTable.type, "address"),
                 ),
@@ -111,10 +111,13 @@ export const AbiStoreLive = Layer.effect(
                 ].filter(Boolean),
               ),
             )
-            .limit(1)
             .pipe(Effect.catchAll(() => Effect.succeed([])))
 
-          const item = items[0]
+          const item =
+            items.find((item) => {
+              // Prioritize address over fragments
+              return item.type === "address"
+            }) ?? items[0]
 
           if (item != null && item.status === "success") {
             return {

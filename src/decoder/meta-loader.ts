@@ -44,7 +44,7 @@ export const ContractMetaStoreLive = Layer.effect(
             .from(contractMetaTable)
             .where(
               and(
-                eq(contractMetaTable.address, address),
+                eq(contractMetaTable.address, address.toLowerCase()),
                 eq(contractMetaTable.chain, chainID),
               ),
             )
