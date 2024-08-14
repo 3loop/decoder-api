@@ -149,13 +149,14 @@ const AddAbi = HttpRouter.post(
       Schema.Struct({
         address: Schema.String,
         abi: Schema.String,
+        chain: Schema.Number,
       }),
     )
 
     // TODO: Validate ABI
     yield* sql`
-      INSERT INTO contractAbi (address, abi)
-      VALUES (${data.address}, ${data.abi})
+      INSERT INTO contractAbi (address, chain, abi, type, status)
+      VALUES (${data.address}, ${data.chain}, ${data.abi}, "address", "success")
     `
 
     return yield* HttpServerResponse.json({ status: "ok" })
@@ -180,9 +181,10 @@ export const HttpLive = HttpRouter.empty.pipe(
   HttpRouter.use(authorizationMiddleware),
   Effect.timeoutFail({
     duration: "10 seconds",
-    onTimeout: () => HttpServerResponse.text("timeout", {
-      status: 408,
-    }),
+    onTimeout: () =>
+      HttpServerResponse.text("timeout", {
+        status: 408,
+      }),
   }),
   Effect.catchTag("AuthorizationError", (error) =>
     Effect.gen(function* () {

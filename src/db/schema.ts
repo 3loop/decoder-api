@@ -3,7 +3,7 @@ import * as D from "drizzle-orm/sqlite-core"
 
 export const apiKeys = D.sqliteTable("apiKeys", {
   apiKey: D.text("apiKey").primaryKey(),
-  organisationId: D.text("organisationId").references(() => organisations.id)
+  organisationId: D.text("organisationId").references(() => organisations.id),
 })
 
 export const organisations = D.sqliteTable("organisations", {

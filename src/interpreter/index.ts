@@ -20,7 +20,7 @@ export const interpretTransaction = (decodedTx: DecodedTx) =>
     let interpreter = interpreterService.findInterpreter(decodedTx)
 
     if (interpreter == null) {
-      interpreter = { id: 'fallback', schema: fallbackInterpreter }
+      interpreter = { id: "fallback", schema: fallbackInterpreter }
     }
 
     const result = yield* interpreterService.interpretTx(decodedTx, interpreter)

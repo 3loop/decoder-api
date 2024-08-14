@@ -17,7 +17,10 @@ export const AbiStoreLive = Layer.effect(
   AbiStore,
   Effect.gen(function* () {
     const db = yield* SqliteDrizzle.SqliteDrizzle
-    const etherscanApiKey = yield* Config.withDefault(Config.string("ETHERSCAN_API_KEY"), undefined)
+    const etherscanApiKey = yield* Config.withDefault(
+      Config.string("ETHERSCAN_API_KEY"),
+      undefined,
+    )
     const sql = yield* SqlClient.SqlClient
 
     return AbiStore.of({
@@ -33,11 +36,17 @@ export const AbiStoreLive = Layer.effect(
       },
       set: (key, value) =>
         Effect.gen(function* (_) {
-          if (value.status === "success") {
+          if (value.status === "success" && value.result.type === "address") {
             const result = value.result
             yield* sql`
-              INSERT INTO contractAbi (type, address, event, signature, chain, abi, status)
-              VALUES (${result.type}, ${result.address}, ${"event" in result ? result.event : null}, ${"signature" in result ? result.signature : null}, ${result.chainID}, ${result.abi}, "success")
+              INSERT INTO contractAbi (type, address, chain, abi, status)
+              VALUES (${result.type}, ${result.address}, ${result.chainID}, ${result.abi}, "success")
+            `
+          } else if (value.status === "success") {
+            const result = value.result
+            yield* sql`
+              INSERT INTO contractAbi (type, event, signature, abi, status)
+              VALUES (${result.type}, ${"event" in result ? result.event : null}, ${"signature" in result ? result.signature : null}, ${result.abi}, "success")
             `
           } else {
             yield* sql`

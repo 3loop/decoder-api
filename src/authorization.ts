@@ -16,7 +16,7 @@ interface Authorization {
 
 export class AuthorizationError {
   readonly _tag = "AuthorizationError"
-  constructor(readonly message: string) { }
+  constructor(readonly message: string) {}
 }
 
 export const Authorization = Context.GenericTag<AuthorizationContext>(
