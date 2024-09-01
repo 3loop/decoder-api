@@ -36,11 +36,12 @@ export const AbiStoreLive = Layer.effect(
       },
       set: (key, value) =>
         Effect.gen(function* (_) {
+          const normalizedAddress = key.address.toLowerCase()
           if (value.status === "success" && value.result.type === "address") {
             const result = value.result
             yield* sql`
               INSERT INTO contractAbi (type, address, chain, abi, status)
-              VALUES (${result.type}, ${result.address}, ${result.chainID}, ${result.abi}, "success")
+              VALUES (${result.type}, ${normalizedAddress}, ${result.chainID}, ${result.abi}, "success")
             `
           } else if (value.status === "success") {
             const result = value.result
@@ -51,7 +52,7 @@ export const AbiStoreLive = Layer.effect(
           } else {
             yield* sql`
               INSERT INTO contractAbi (type, address, chain, status)
-              VALUES ("address", ${key.address}, ${key.chainID}, "not-found")
+              VALUES ("address", ${normalizedAddress}, ${key.chainID}, "not-found")
             `
           }
         }).pipe(Effect.catchAll(() => Effect.succeed(null))),
@@ -99,15 +100,15 @@ export const AbiStoreLive = Layer.effect(
                 ),
                 ...[
                   signature != null &&
-                    and(
-                      eq(contractAbiTable.signature, signature),
-                      eq(contractAbiTable.type, "func"),
-                    ),
+                  and(
+                    eq(contractAbiTable.signature, signature),
+                    eq(contractAbiTable.type, "func"),
+                  ),
                   event != null &&
-                    and(
-                      eq(contractAbiTable.event, event),
-                      eq(contractAbiTable.type, "event"),
-                    ),
+                  and(
+                    eq(contractAbiTable.event, event),
+                    eq(contractAbiTable.type, "event"),
+                  ),
                 ].filter(Boolean),
               ),
             )
@@ -124,10 +125,10 @@ export const AbiStoreLive = Layer.effect(
               status: "success",
               result: {
                 type: item.type,
-                address: item.address,
                 event: item.event,
                 signature: item.signature,
-                chainID: item.chain,
+                address,
+                chainID,
                 abi: item.abi,
               },
             } as ContractAbiResult

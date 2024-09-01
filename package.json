@@ -18,8 +18,8 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "@3loop/transaction-decoder": "^0.13.0",
-    "@3loop/transaction-interpreter": "^0.3.0",
+    "@3loop/transaction-decoder": "^0.14.0",
+    "@3loop/transaction-interpreter": "^0.4.0",
     "@effect/opentelemetry": "^0.35.0",
     "@effect/platform": "^0.61.1",
     "@effect/platform-bun": "^0.41.1",
@@ -39,13 +39,13 @@
     "drizzle-orm": "^0.32.1",
     "effect": "3.6.0",
     "quickjs-emscripten": "^0.29.1",
-    "viem": "^2.9.9"
+    "viem": "^2.21.1"
   },
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.5.1",
     "@types/bun": "^1.1.3",
     "better-sqlite3": "^11.0.0",
-    "drizzle-kit": "^0.22.7",
+    "drizzle-kit": "^0.24.2",
     "prettier": "^3.3.2",
     "typescript": "^5.5.2"
   }

@@ -28,12 +28,12 @@ export const ContractMetaStoreLive = Layer.effect(
           if (value.status === "success") {
             yield* sql`
               INSERT INTO contractMeta (address, chain, contractName, tokenSymbol, decimals, type, status)
-              VALUES (${key.address}, ${key.chainID}, ${value.result.contractName}, ${value.result.tokenSymbol}, ${value.result.decimals ?? null}, ${value.result.type}, "success")
+              VALUES (${key.address.toLowerCase()}, ${key.chainID}, ${value.result.contractName}, ${value.result.tokenSymbol}, ${value.result.decimals ?? null}, ${value.result.type}, "success")
             `
           } else {
             yield* sql`
               INSERT INTO contractMeta (address, chain, contractName, tokenSymbol, decimals, type, status)
-              VALUES (${key.address}, ${key.chainID}, null, null, null, null, "not-found")
+              VALUES (${key.address.toLowerCase()}, ${key.chainID}, null, null, null, null, "not-found")
             `
           }
         }).pipe(Effect.catchAll(() => Effect.succeed(null))),
@@ -56,13 +56,13 @@ export const ContractMetaStoreLive = Layer.effect(
             return {
               status: "success",
               result: {
-                address: item.address,
-                contractAddress: item.address,
+                address: address,
+                contractAddress: address,
                 contractName: item.contractName,
                 tokenSymbol: item.tokenSymbol,
                 decimals: item.decimals,
                 type: item.type,
-                chainID: item.chain,
+                chainID: chainID,
               } as ContractData,
             }
           } else if (item != null && item.status === "not-found") {
