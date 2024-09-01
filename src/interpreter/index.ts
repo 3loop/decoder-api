@@ -8,7 +8,7 @@ import {
 import { Effect, Layer } from "effect"
 
 const config = Layer.succeed(QuickjsConfig, {
-  runtimeConfig: { timeout: 1000 },
+  runtimeConfig: { timeout: 5000 },
 })
 
 export const InterpreterLive = Layer.provide(QuickjsInterpreterLive, config)
