@@ -37,7 +37,7 @@ const MainLive = Layer.provide(
 
 const cache = Effect.provide(
   Layer.setRequestCache(
-    Request.makeCache({ capacity: 256, timeToLive: "60 minutes" }),
+    Request.makeCache({ capacity: 64, timeToLive: "60 minutes" }),
   ),
 )
 

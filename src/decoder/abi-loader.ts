@@ -69,7 +69,7 @@ export const AbiStoreLive = Layer.effect(
                 address,
                 signature: signature,
                 chainID: chainID,
-                abi: `[${match.fragment}]`,
+                abi: match.fragment,
               },
             }
           }
@@ -82,7 +82,7 @@ export const AbiStoreLive = Layer.effect(
                 address: address,
                 event: event,
                 chainID: chainID,
-                abi: `[${eventMatch.fragment}]`,
+                abi: eventMatch.fragment,
               },
             }
           }

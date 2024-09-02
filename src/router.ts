@@ -7,7 +7,7 @@ import {
   HttpServerResponse,
 } from "@effect/platform"
 import { Schema } from "@effect/schema"
-import { Effect, Either, Layer, Request } from "effect"
+import { Effect, Either } from "effect"
 import { Hex } from "viem"
 import { interpretTransaction } from "./interpreter"
 import { OpenApiRoute, SwaggerUIRoute } from "./swagger"
@@ -89,8 +89,21 @@ const InterpretRoute = HttpRouter.get(
       )
     }
 
-    const result = yield* interpretTransaction(decoded.right)
-    return yield* HttpServerResponse.json(result)
+    const result = yield* Effect.either(interpretTransaction(decoded.right))
+
+    if (Either.isLeft(result)) {
+      yield* Effect.logError("Interpret failed", result.left)
+      return yield* HttpServerResponse.json(
+        {
+          error: "Failed to interpret transaction",
+        },
+        {
+          status: 400,
+        },
+      )
+    }
+
+    return yield* HttpServerResponse.json(result.right)
   }),
 )
 
