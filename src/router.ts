@@ -10,7 +10,7 @@ import { Schema } from "@effect/schema"
 import { Effect, Either } from "effect"
 import { Hex } from "viem"
 import { interpretTransaction } from "./interpreter"
-import { OpenApiRoute, SwaggerUIRoute } from "./swagger"
+import { SwaggerUIRoute } from "./swagger"
 import { SqlClient } from "@effect/sql"
 import { Authorization, authorizationMiddleware } from "./authorization"
 
@@ -188,7 +188,6 @@ export const HttpLive = HttpRouter.empty.pipe(
   AddMetadata,
   AddAbi,
   SwaggerUIRoute,
-  OpenApiRoute,
   SupportedChainsRoute,
   HealthRoute,
   HttpRouter.use(authorizationMiddleware),
