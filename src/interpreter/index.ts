@@ -26,4 +26,4 @@ export const interpretTransaction = (decodedTx: DecodedTx) =>
     const result = yield* interpreterService.interpretTx(decodedTx, interpreter)
 
     return result
-  })
+  }).pipe(Effect.provide(InterpreterLive), Effect.scoped)

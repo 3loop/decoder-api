@@ -18,8 +18,8 @@
   "keywords": [],
   "author": "3loop",
   "dependencies": {
-    "@3loop/transaction-decoder": "^0.15.1",
-    "@3loop/transaction-interpreter": "^0.5.1",
+    "@3loop/transaction-decoder": "^0.15.2",
+    "@3loop/transaction-interpreter": "^0.5.2",
     "@effect/opentelemetry": "^0.36.0",
     "@effect/platform": "^0.63.0",
     "@effect/platform-bun": "^0.43.0",

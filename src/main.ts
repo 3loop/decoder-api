@@ -6,7 +6,6 @@ import { DatabaseLive } from "./db"
 import { AbiStoreLive } from "./decoder/abi-loader"
 import { ContractMetaStoreLive } from "./decoder/meta-loader"
 import { RPCProviderLive } from "./decoder/provider"
-import { InterpreterLive } from "./interpreter"
 import { HttpLive } from "./router"
 import { TracingLive } from "./Tracing"
 
@@ -31,7 +30,6 @@ const MainLive = Layer.provide(
   Layer.provide(LogLevelLive),
   Layer.provide(Logger.logFmt),
   Layer.provide(DecoderLayer),
-  Layer.provide(InterpreterLive),
   Layer.provide(TracingLive),
 )
 
